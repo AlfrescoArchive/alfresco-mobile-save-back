@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>${TARGET_NAME}</string>
+	<string>Alfresco SB</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

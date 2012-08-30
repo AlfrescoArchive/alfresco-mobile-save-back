@@ -1,9 +1,22 @@
+/*******************************************************************************
+ * Copyright (C) 2005-2012 Alfresco Software Limited.
+ *
+ * This file is part of the Alfresco SaveBack Demo.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ******************************************************************************/
 //
 //  MainViewController.m
-//  SaveBack
-//
-//  Created by Mike Hatfield on 28/08/2012.
-//  Copyright (c) 2012 Alfresco. All rights reserved.
 //
 
 #import "MainViewController.h"
@@ -42,7 +55,7 @@
     [super viewDidLoad];
 
     // Set title
-    self.customNavigationItem.title = NSLocalizedString(@"Alfresco SaveBack", @"application title");
+    self.customNavigationItem.title = NSLocalizedString(@"Alfresco SaveBack Demo", @"application title");
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -64,7 +77,7 @@
 
 - (void)displayMessage:(NSString *)message
 {
-    [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Alfresco SaveBack", @"application title")
+    [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Alfresco SaveBack Demo", @"application title")
                                 message:message
                                delegate:nil
                       cancelButtonTitle:NSLocalizedString(@"OK", @"default message OK")
@@ -152,8 +165,12 @@
          * Handle either "Open In..." or "Save Back"
          */
         NSURL *url = [NSURL fileURLWithPath:self.savedFilePath];
-        self.docInteractionController = [UIDocumentInteractionController interactionControllerWithURL:url];
-        self.docInteractionController.delegate = self;
+        if (self.docInteractionController == nil)
+        {
+            self.docInteractionController = [[UIDocumentInteractionController alloc] init];
+            self.docInteractionController.delegate = self;
+        }
+        self.docInteractionController.URL = url;
 
         // Was it the "Save Back" action?
         if (buttonIndex == self.saveBackActionIndex)
@@ -177,15 +194,17 @@
                 return;
             }
         }
+        
+        /**
+         * (Demo purposes) Attempt to update the file's ModificationDate to the current date
+         */
+        NSDictionary *attrs = [NSDictionary dictionaryWithObject:[NSDate date] forKey:NSFileModificationDate];
+        [[NSFileManager defaultManager] setAttributes:attrs ofItemAtPath:self.savedFilePath error:NULL];
 
         if (![self.docInteractionController presentOpenInMenuFromBarButtonItem:self.actionButton animated:YES])
         {
             [self displayMessage:NSLocalizedString(@"There are no applications that are capable of opening this file on this device", @"no available applications for Open In...")];
         }
-    }
-    else
-    {
-        self.docInteractionController = nil;
     }
 }
 
