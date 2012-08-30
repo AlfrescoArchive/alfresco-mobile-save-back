@@ -11,11 +11,13 @@
 // UI Elements
 @property (weak, nonatomic) IBOutlet UINavigationItem *customNavigationItem;
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *actionButton;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *trashButton;
 @property (weak, nonatomic) IBOutlet UIImageView *logoImageView;
 @property (weak, nonatomic) IBOutlet UILabel *documentLabel;
 
 // UI Element actions
 - (IBAction)actionButtonHandler:(id)sender;
+- (IBAction)trashButtonHandler:(id)sender;
 
 // Public methods
 - (BOOL)handleFileOpenURL:(NSURL *)url annotation:(id)annotation;

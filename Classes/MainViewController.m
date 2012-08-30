@@ -21,6 +21,11 @@
 @end
 
 @implementation MainViewController
+@synthesize customNavigationItem = _customNavigationItem;
+@synthesize actionButton = _actionButton;
+@synthesize trashButton = _trashButton;
+@synthesize logoImageView = _logoImageView;
+@synthesize documentLabel = _documentLabel;
 
 - (void)dealloc
 {
@@ -37,7 +42,7 @@
     [super viewDidLoad];
 
     // Set title
-    self.customNavigationItem.title = NSLocalizedString(@"Alfresco SaveBack Sample", @"application title");
+    self.customNavigationItem.title = NSLocalizedString(@"Alfresco SaveBack", @"application title");
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -59,11 +64,22 @@
 
 - (void)displayMessage:(NSString *)message
 {
-    [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Alfresco SaveBack Sample", @"application title")
+    [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Alfresco SaveBack", @"application title")
                                 message:message
                                delegate:nil
                       cancelButtonTitle:NSLocalizedString(@"OK", @"default message OK")
                       otherButtonTitles:nil] show];
+}
+
+- (void)clearDocument
+{
+    if (self.savedFilePath != nil)
+    {
+        [[NSFileManager defaultManager] removeItemAtPath:self.savedFilePath error:NULL];
+        self.savedFilePath = nil;
+    }
+    self.alfrescoMetadata = nil;
+    [self updateViews];
 }
 
 - (void)updateViews
@@ -72,6 +88,7 @@
     BOOL hasAlfrescoMetadata = (self.alfrescoMetadata != nil);
 
     self.actionButton.enabled = hasDocument;
+    self.trashButton.enabled = hasDocument;
     self.logoImageView.image = [UIImage imageNamed:(hasAlfrescoMetadata ? @"has-alfresco-metadata" : @"no-alfresco-metadata")];
     self.documentLabel.text = hasDocument ? self.savedFilePath.pathComponents.lastObject : NSLocalizedString(@"No Document", @"no document label");
 }
@@ -109,7 +126,7 @@
     [actionSheet addButtonWithTitle:NSLocalizedString(@"Open In...", @"action menu item: Open In...")];
     if (self.alfrescoMetadata != nil)
     {
-        self.saveBackActionIndex = [actionSheet addButtonWithTitle:NSLocalizedString(@"Save Back to Alfresco", @"action menu item: Save Back to Alfresco")];
+        self.saveBackActionIndex = [actionSheet addButtonWithTitle:NSLocalizedString(@"Save Back", @"action menu item: Save Back")];
     }
     
     if ([UIDevice currentDevice].userInterfaceIdiom != UIUserInterfaceIdiomPad)
@@ -122,12 +139,17 @@
     [actionSheet showFromBarButtonItem:(UIBarButtonItem *)sender animated:YES];
 }
 
+- (IBAction)trashButtonHandler:(id)sender
+{
+    [self clearDocument];
+}
+
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
 {
     if (buttonIndex != actionSheet.cancelButtonIndex)
     {
         /**
-         * Handle either "Open In..." or "Save Back to Alfresco"
+         * Handle either "Open In..." or "Save Back"
          */
         NSURL *url = [NSURL fileURLWithPath:self.savedFilePath];
         self.docInteractionController = [UIDocumentInteractionController interactionControllerWithURL:url];
@@ -161,6 +183,10 @@
             [self displayMessage:NSLocalizedString(@"There are no applications that are capable of opening this file on this device", @"no available applications for Open In...")];
         }
     }
+    else
+    {
+        self.docInteractionController = nil;
+    }
 }
 
 #pragma mark - UI Document Interaction Controller
@@ -176,19 +202,6 @@
          */
         NSDictionary* annotation = [NSDictionary dictionaryWithObject:self.alfrescoMetadata forKey:AlfrescoSaveBackMetadataKey];
         self.docInteractionController.annotation = annotation;
-    }
-}
-
-- (void)documentInteractionController:(UIDocumentInteractionController *)controller didEndSendingToApplication:(NSString *)application
-{
-    if ([application isEqualToString:AlfrescoBundleIdentifier])
-    {
-        /**
-         * Alfresco SaveBack integration
-         *
-         * (Optional) The temporary file can be cleaned up here
-         */
-        alfrescoSaveBackRemoveTemporaryFileAtURL(controller.URL);
     }
 }
 

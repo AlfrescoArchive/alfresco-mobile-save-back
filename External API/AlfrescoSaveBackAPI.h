@@ -24,4 +24,3 @@ extern NSString * const AlfrescoSaveBackMetadataKey;
 extern NSString * const AlfrescoSaveBackDocumentExtension;
 
 NSURL *alfrescoSaveBackURLForFilePath(NSString *filePath, NSError **error);
-void alfrescoSaveBackRemoveTemporaryFileAtURL(NSURL *fileURL);

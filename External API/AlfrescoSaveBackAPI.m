@@ -45,19 +45,3 @@ NSURL *alfrescoSaveBackURLForFilePath(NSString *filePath, NSError **error)
 
     return [NSURL fileURLWithPath:tempSaveBackPath];
 }
-
-/**
- * Alfresco SaveBack integration
- *
- * (Optional) Removes the temporary file created as part of the SaveBack preparation.
- * A suitable place to call this function is the UIDocumentInteractionControllerDelegate method
- * documentInteractionController:didEndSendingToApplication:
- */
-void alfrescoSaveBackRemoveTemporaryFileAtURL(NSURL *fileURL)
-{
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    if ([fileManager fileExistsAtPath:[fileURL path]])
-    {
-        [fileManager removeItemAtURL:fileURL error:NULL];
-    }
-}
