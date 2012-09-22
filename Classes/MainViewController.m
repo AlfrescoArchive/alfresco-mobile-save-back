@@ -34,11 +34,6 @@
 @end
 
 @implementation MainViewController
-@synthesize customNavigationItem = _customNavigationItem;
-@synthesize actionButton = _actionButton;
-@synthesize trashButton = _trashButton;
-@synthesize logoImageView = _logoImageView;
-@synthesize documentLabel = _documentLabel;
 
 - (void)dealloc
 {
@@ -60,8 +55,8 @@
 
 - (void)viewWillAppear:(BOOL)animated
 {
-    [self updateViews];
     [super viewWillAppear:animated];
+    [self updateViews];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -75,6 +70,9 @@
 
 #pragma mark - Instance Methods
 
+/**
+ * Convenience method for displaying messages in UIAlertViews
+ */
 - (void)displayMessage:(NSString *)message
 {
     [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Alfresco SaveBack Demo", @"application title")
@@ -84,6 +82,9 @@
                       otherButtonTitles:nil] show];
 }
 
+/**
+ * Clears the current document references
+ */
 - (void)clearDocument
 {
     if (self.savedFilePath != nil)
@@ -92,9 +93,13 @@
         self.savedFilePath = nil;
     }
     self.alfrescoMetadata = nil;
+    [self.actionSheet dismissWithClickedButtonIndex:self.actionSheet.cancelButtonIndex animated:YES];
     [self updateViews];
 }
 
+/**
+ * Ensure the UI elements correctly reflect the application state
+ */
 - (void)updateViews
 {
     BOOL hasDocument = (self.savedFilePath != nil);
@@ -108,20 +113,40 @@
 
 #pragma mark - File URL Handler
 
+/**
+ * Called from the AppDelegate class to handle file open URL requests
+ */
 - (BOOL)handleFileOpenURL:(NSURL *)url annotation:(id)annotation
 {
+    // Generate the path where the incoming file is to be saved (in our Documents folder)
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *documentsDirectory = [paths objectAtIndex:0];
     NSString *savePath = [documentsDirectory stringByAppendingPathComponent:url.path.pathComponents.lastObject];
-    
+
+    // Delete any existing file of the same name
     NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSError *error;
     if ([fileManager fileExistsAtPath:savePath])
     {
-        [fileManager removeItemAtPath:savePath error:NULL];
+        [fileManager removeItemAtPath:savePath error:&error];
+        if (error)
+        {
+            [self displayMessage:error.localizedDescription];
+            return NO;
+        }
     }
-    [fileManager moveItemAtPath:url.path toPath:savePath error:NULL];
+    
+    // Now move the incoming (Inbox) file to the Downloads folder
+    [fileManager moveItemAtPath:url.path toPath:savePath error:&error];
+    if (error)
+    {
+        [self displayMessage:error.localizedDescription];
+        return NO;
+    }
 
     self.savedFilePath = savePath;
+    
+    // If the inbound annotation has the Alfresco SaveBack metadata, then save that now
     self.alfrescoMetadata = [annotation objectForKey:AlfrescoSaveBackMetadataKey];
     
     [self updateViews];
@@ -131,12 +156,21 @@
 
 #pragma mark - Action Button Handler
 
+/**
+ * Handles taps on the action button
+ */
 - (IBAction)actionButtonHandler:(id)sender
 {
+    self.actionButton.enabled = NO;
+    
+    // Create an action sheet
     UIActionSheet *actionSheet = [[UIActionSheet alloc] init];
     actionSheet.delegate = self;
 
+    // Add the standard "Open In..." action
     [actionSheet addButtonWithTitle:NSLocalizedString(@"Open In...", @"action menu item: Open In...")];
+
+    // If the inbound file was accompanied by Alfresco metadata then we can offer the "Save Back" action too
     if (self.alfrescoMetadata != nil)
     {
         self.saveBackActionIndex = [actionSheet addButtonWithTitle:NSLocalizedString(@"Save Back", @"action menu item: Save Back")];
@@ -152,18 +186,27 @@
     [actionSheet showFromBarButtonItem:(UIBarButtonItem *)sender animated:YES];
 }
 
+/**
+ * Handles taps on the trash button
+ */
 - (IBAction)trashButtonHandler:(id)sender
 {
+    // Remove references to the passed-in document
     [self clearDocument];
 }
 
+/**
+ * Handle a tap on one of the action sheet buttons
+ */
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-    if (buttonIndex != actionSheet.cancelButtonIndex)
+    if (buttonIndex == actionSheet.cancelButtonIndex)
     {
-        /**
-         * Handle either "Open In..." or "Save Back"
-         */
+        self.actionButton.enabled = YES;
+    }
+    else
+    {
+        // Both "Open In..." and "Save Back" require a UIDocumentInteractionController
         NSURL *url = [NSURL fileURLWithPath:self.savedFilePath];
         if (self.docInteractionController == nil)
         {
@@ -186,6 +229,7 @@
             {
                 // Set the URL property of the UIDocumentInteractionController to the URL that was returned
                 self.docInteractionController.URL = saveBackURL;
+                self.docInteractionController.UTI = AlfrescoSaveBackUTI;
             }
             else
             {
@@ -210,6 +254,9 @@
 
 #pragma mark - UI Document Interaction Controller
 
+/**
+ * Adds the Alfresco metadata to the outbound file request if the Alfresco app was chosen
+ */
 - (void)documentInteractionController:(UIDocumentInteractionController *)controller willBeginSendingToApplication:(NSString *)application
 {
     if ([application isEqualToString:AlfrescoBundleIdentifier])
@@ -222,6 +269,11 @@
         NSDictionary* annotation = [NSDictionary dictionaryWithObject:self.alfrescoMetadata forKey:AlfrescoSaveBackMetadataKey];
         self.docInteractionController.annotation = annotation;
     }
+}
+
+- (void)documentInteractionControllerDidDismissOpenInMenu:(UIDocumentInteractionController *)controller
+{
+    self.actionButton.enabled = YES;
 }
 
 @end
