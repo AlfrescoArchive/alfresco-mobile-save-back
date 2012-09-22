@@ -33,10 +33,16 @@ NSString * const AlfrescoBundleIdentifier = @"com.alfresco.mobile";
 NSString * const AlfrescoSaveBackMetadataKey = @"AlfrescoMetadata";
 
 /**
- * To limit the "Open In..." list of available apps during a Save Back operation, the document must be renamed so that
- * the following extension is appended to the filename. For example "My Document.docx.alf01"
+ * Limit the "Open In..." list of available apps, part 1:
+ * The document must be renamed so that the following extension is appended to the filename. For example "My Document.docx.alfrescosaveback"
  */
-NSString * const AlfrescoSaveBackDocumentExtension = @".alf01";
+NSString * const AlfrescoSaveBackDocumentExtension = @".alfrescosaveback";
+
+/**
+ * Limit the "Open In..." list of available apps, part 2:
+ * The UIDocumentInteractionController's UTI property must be set to a unique string.
+ */
+NSString * const AlfrescoSaveBackUTI = @"com.alfresco.mobile.saveback";
 
 
 /**

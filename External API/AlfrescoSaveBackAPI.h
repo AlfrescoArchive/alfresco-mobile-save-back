@@ -22,5 +22,6 @@
 extern NSString * const AlfrescoBundleIdentifier;
 extern NSString * const AlfrescoSaveBackMetadataKey;
 extern NSString * const AlfrescoSaveBackDocumentExtension;
+extern NSString * const AlfrescoSaveBackUTI;
 
 NSURL *alfrescoSaveBackURLForFilePath(NSString *filePath, NSError **error);
