@@ -214,6 +214,7 @@
             self.docInteractionController.delegate = self;
         }
         self.docInteractionController.URL = url;
+        self.docInteractionController.UTI = nil;
 
         // Was it the "Save Back" action?
         if (buttonIndex == self.saveBackActionIndex)
