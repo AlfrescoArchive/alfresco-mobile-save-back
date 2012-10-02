@@ -260,7 +260,7 @@
  */
 - (void)documentInteractionController:(UIDocumentInteractionController *)controller willBeginSendingToApplication:(NSString *)application
 {
-    if ([application isEqualToString:AlfrescoBundleIdentifier])
+    if ([controller.UTI isEqualToString:AlfrescoSaveBackUTI])
     {
         /**
          * Alfresco SaveBack integration

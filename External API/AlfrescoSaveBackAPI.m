@@ -22,11 +22,6 @@
 #import "AlfrescoSaveBackAPI.h"
 
 /**
- * AlfrescoBundleIdentifier can be matched against application in documentInteractionController:willBeginSendingToApplication:
- */
-NSString * const AlfrescoBundleIdentifier = @"com.alfresco.mobile";
-
-/**
  * The Alfresco private metadata will be stored in the annotation dictionary under this key. It should be returned in the
  * same format, using the same key, when invoking a Save Back operation.
  */
