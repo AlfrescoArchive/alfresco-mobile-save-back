@@ -61,11 +61,18 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone)
-    {
-        return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
-    }
-    return YES;
+    return ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPhone);
+}
+
+- (void)viewDidLayoutSubviews
+{
+    CGRect rect = self.documentLabel.frame;
+    rect.origin.y = self.logoImageView.frame.origin.y + self.logoImageView.frame.size.height;
+    self.documentLabel.frame = rect;
+    
+    rect = self.documentMetadata.frame;
+    rect.origin.y = self.documentLabel.frame.origin.y + self.documentLabel.frame.size.height;
+    self.documentMetadata.frame = rect;
 }
 
 #pragma mark - Instance Methods
@@ -109,6 +116,43 @@
     self.trashButton.enabled = hasDocument;
     self.logoImageView.image = [UIImage imageNamed:(hasAlfrescoMetadata ? @"has-alfresco-metadata" : @"no-alfresco-metadata")];
     self.documentLabel.text = hasDocument ? self.savedFilePath.pathComponents.lastObject : NSLocalizedString(@"No Document", @"no document label");
+    if (hasDocument)
+    {
+        // Document Metadata
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSError *error = nil;
+        NSDictionary *fileAttributes = [fileManager attributesOfItemAtPath:self.savedFilePath error:&error];
+        if (error != nil)
+        {
+            self.documentMetadata.text = error.localizedDescription;
+        }
+        else
+        {
+            NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+            [dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
+            [dateFormatter setDateStyle:NSDateFormatterMediumStyle];
+            self.documentMetadata.text = [NSString stringWithFormat:@"%@\n%@",
+                                          [self formattedFileSize:fileAttributes.fileSize],
+                                          [dateFormatter stringFromDate:fileAttributes.fileModificationDate]];
+        }
+    }
+    self.documentMetadata.hidden = !hasDocument;
+}
+
+- (NSString *)formattedFileSize:(unsigned long long)fileSize
+{
+    double convertedValue = (double)fileSize;
+    int multiplyFactor = 0;
+    
+    NSArray *tokens = [NSArray arrayWithObjects:@"bytes", @"KiB", @"MiB", @"GiB", @"TiB", nil];
+    
+    while (convertedValue > 1024)
+    {
+        convertedValue /= 1024;
+        multiplyFactor++;
+    }
+    
+    return [NSString stringWithFormat:@"%4.2f %@", convertedValue, [tokens objectAtIndex:multiplyFactor]];
 }
 
 #pragma mark - File URL Handler
@@ -125,7 +169,7 @@
 
     // Delete any existing file of the same name
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSError *error;
+    NSError *error = nil;
     if ([fileManager fileExistsAtPath:savePath])
     {
         [fileManager removeItemAtPath:savePath error:&error];
@@ -216,6 +260,18 @@
         self.docInteractionController.URL = url;
         self.docInteractionController.UTI = nil;
 
+        /**
+         * (Demo purposes) Attempt to update the file's ModificationDate to the current date
+         */
+        NSError *dateError = nil;
+        NSDictionary *attrs = @{NSFileModificationDate: [NSDate date]};
+        [[NSFileManager defaultManager] setAttributes:attrs ofItemAtPath:self.savedFilePath error:&dateError];
+        
+        if (dateError)
+        {
+            NSLog(@"%@ %@: %@", [self class], NSStringFromSelector(_cmd), dateError.localizedDescription);
+        }
+
         // Was it the "Save Back" action?
         if (buttonIndex == self.saveBackActionIndex)
         {
@@ -224,7 +280,7 @@
              *
              * Create an NSURL object that the UIDocumentInteractionController will need for SaveBack to operate correctly
              */
-            NSError *error;
+            NSError *error = nil;
             NSURL *saveBackURL = alfrescoSaveBackURLForFilePath(self.savedFilePath, &error);
             if (saveBackURL != nil)
             {
@@ -240,12 +296,6 @@
             }
         }
         
-        /**
-         * (Demo purposes) Attempt to update the file's ModificationDate to the current date
-         */
-        NSDictionary *attrs = [NSDictionary dictionaryWithObject:[NSDate date] forKey:NSFileModificationDate];
-        [[NSFileManager defaultManager] setAttributes:attrs ofItemAtPath:self.savedFilePath error:NULL];
-
         if (![self.docInteractionController presentOpenInMenuFromBarButtonItem:self.actionButton animated:YES])
         {
             [self displayMessage:NSLocalizedString(@"There are no applications that are capable of opening this file on this device", @"no available applications for Open In...")];
@@ -277,4 +327,8 @@
     self.actionButton.enabled = YES;
 }
 
+- (void)viewDidUnload {
+    [self setDocumentMetadata:nil];
+    [super viewDidUnload];
+}
 @end

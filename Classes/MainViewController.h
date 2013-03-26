@@ -27,6 +27,7 @@
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *trashButton;
 @property (weak, nonatomic) IBOutlet UIImageView *logoImageView;
 @property (weak, nonatomic) IBOutlet UILabel *documentLabel;
+@property (weak, nonatomic) IBOutlet UILabel *documentMetadata;
 
 // UI Element actions
 - (IBAction)actionButtonHandler:(id)sender;
